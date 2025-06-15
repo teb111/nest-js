@@ -1,35 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { Body, Injectable } from '@nestjs/common';
 import { UsersService } from '../../users/providers/users.service';
+import { CreatePostDto } from '../dtos/create-post.dto';
+import { Repository } from 'typeorm';
+import { Post } from '../post.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { MetaOption } from 'src/meta-options/meta-option.entity';
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly usersService: UsersService) {}
-  private posts = [
-    { id: 1, title: 'Post 1', content: 'Content of Post 1' },
-    { id: 2, title: 'Post 2', content: 'Content of Post 2' },
-    { id: 3, title: 'Post 3', content: 'Content of Post 3' },
-  ];
+  constructor(
+    private readonly usersService: UsersService,
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
+    @InjectRepository(MetaOption)
+    public readonly metaOptionsRepository: Repository<MetaOption>,
+  ) {}
 
-  getAllPosts(userId: string | undefined) {
-    const user = this.usersService.getUserById(userId);
-    return [
-      {
-        userId: user,
-        posts: this.posts,
-      },
-    ];
+  public async getAllPosts(userId: number) {
+    await this.usersService.getUserById(userId);
+    const posts = await this.postRepository.find({
+      // relations: {
+      //   author: true,
+      // },
+    });
+    return posts;
   }
 
-  getPostById(id: number) {
-    const result = this.posts.find((post) => post.id === id) ?? {
-      id: 0,
-      title: 'Post not found',
-      content: 'No content available',
-    };
-    if (result.id === 0) {
-      return result;
-    } else {
-      return result;
+  public getPostById(id: number) {
+    return { id };
+  }
+
+  public async create(@Body() createpostDto: CreatePostDto) {
+    //find the author from the database
+    const author = await this.usersService.getUserById(createpostDto.authorId);
+    if (author) {
+      const post = this.postRepository.create({
+        ...createpostDto,
+        author: author,
+      });
+      return await this.postRepository.save(post);
     }
+  }
+
+  public async delete(id: number) {
+    await this.postRepository.delete(id);
+    return { deleted: true, id };
   }
 }

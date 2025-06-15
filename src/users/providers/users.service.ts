@@ -1,21 +1,32 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { GetUsersParamDto } from '../dtos/get-users-param.dto';
-import { AuthService } from 'src/auth/providers/auth.service';
+
+import { Repository } from 'typeorm';
+import { User } from '../user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserDto } from '../dtos/create-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
+
+  public async createUser(createUserDto: CreateUserDto) {
+    await this.usersRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+    let newUser = this.usersRepository.create(createUserDto);
+    newUser = await this.usersRepository.save(newUser);
+    return newUser;
+  }
   public getUsers(
     getUsersParamDto: GetUsersParamDto,
     limit: number,
     page: number,
   ) {
     console.log(getUsersParamDto, limit, page);
-    const isAuth = this.authService.isAuthenticated();
-    console.log('Is Authenticated:', isAuth);
     return [
       {
         id: 1,
@@ -28,10 +39,7 @@ export class UsersService {
     ];
   }
 
-  public getUserById(userId: string | undefined) {
-    if (!userId) {
-      return { id: 0, name: 'User not found' };
-    }
-    return { id: parseInt(userId, 10), name: `User ${userId}` };
+  public async getUserById(id: number) {
+    return await this.usersRepository.findOneBy({ id });
   }
 }
