@@ -1,16 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { GetUsersParamDto } from '../dtos/get-users-param.dto';
 
 import { Repository } from 'typeorm';
 import { User } from '../user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from '../dtos/create-user.dto';
+import { ConfigService, ConfigType } from '@nestjs/config';
+import profileConfig from '../config/profile.config';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    // Inectinging config service
+    private readonly configService: ConfigService,
+
+    @Inject(profileConfig.KEY)
+    private readonly ProfileConfiguration: ConfigType<typeof profileConfig>,
   ) {}
 
   public async createUser(createUserDto: CreateUserDto) {
@@ -26,6 +33,8 @@ export class UsersService {
     limit: number,
     page: number,
   ) {
+    // const environment = this.configService.get<string>('MY_BUCKET');
+    console.log(this.ProfileConfiguration);
     console.log(getUsersParamDto, limit, page);
     return [
       {

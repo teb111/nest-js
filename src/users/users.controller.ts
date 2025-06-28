@@ -21,7 +21,7 @@ export class UsersController {
   @ApiOperation({
     summary: 'Get users with optional pagination',
   })
-  @Get('/{:id}')
+  @Get()
   public getUsers(
     @Param() getUsersParamDto: GetUsersParamDto,
     @Query('limit', new DefaultValuePipe(10)) limit: number,
