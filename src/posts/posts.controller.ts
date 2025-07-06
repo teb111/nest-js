@@ -13,16 +13,20 @@ import { PostsService } from './providers/posts.service';
 import { CreatePostDto } from './dtos/create-post.dto';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PatchPostDto } from './dtos/patch-post.dto';
+import { GetPostsDto } from './dtos/get-posts.dto';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
-  @Get('{/:userId}')
-  getAllPosts(@Param('userId', new ParseIntPipe()) userId: number) {
-    return this.postsService.getAllPosts(userId);
+  @Get('/{:userId}')
+  getAllPosts(
+    @Query() postQuery: GetPostsDto,
+    @Param('userId', new ParseIntPipe({ optional: true })) userId?: string,
+  ) {
+    console.log(postQuery);
+    return this.postsService.getAllPosts(postQuery, userId);
   }
-
   @ApiOperation({
     summary: 'Creates a new post for the blog.',
   })
