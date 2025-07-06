@@ -15,7 +15,7 @@ export class TagsService {
     return await this.tagsRepository.save(tag);
   }
 
-  public async findMultipleTags(tags: number[]) {
+  public async findMultipleTags(tags: number[] | any[]) {
     const results = await this.tagsRepository.find({
       where: {
         id: In(tags),

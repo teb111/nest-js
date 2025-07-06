@@ -1,4 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  RequestTimeoutException,
+} from '@nestjs/common';
 import { GetUsersParamDto } from '../dtos/get-users-param.dto';
 
 import { Repository } from 'typeorm';
@@ -7,6 +14,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { ConfigService, ConfigType } from '@nestjs/config';
 import profileConfig from '../config/profile.config';
+import { UsersCreateManyProvider } from './users-create-many.provider';
+import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
 
 @Injectable()
 export class UsersService {
@@ -18,14 +27,41 @@ export class UsersService {
 
     @Inject(profileConfig.KEY)
     private readonly ProfileConfiguration: ConfigType<typeof profileConfig>,
+
+    private readonly usersCreateManyProvider: UsersCreateManyProvider,
   ) {}
 
   public async createUser(createUserDto: CreateUserDto) {
-    await this.usersRepository.findOne({
-      where: { email: createUserDto.email },
-    });
+    let existingUser: User | null;
+    try {
+      existingUser = await this.usersRepository.findOne({
+        where: { email: createUserDto.email },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new RequestTimeoutException(
+        'Unable to connect to database, please try again later.',
+        {
+          description: 'Database connection error',
+        },
+      );
+    }
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists.');
+    }
     let newUser = this.usersRepository.create(createUserDto);
-    newUser = await this.usersRepository.save(newUser);
+    try {
+      newUser = await this.usersRepository.save(newUser);
+    } catch (error) {
+      console.log(error);
+      throw new RequestTimeoutException(
+        'Unable to connect to database, please try again later.',
+        {
+          description: 'Database connection error',
+        },
+      );
+    }
+
     return newUser;
   }
   public getUsers(
@@ -33,7 +69,15 @@ export class UsersService {
     limit: number,
     page: number,
   ) {
-    // const environment = this.configService.get<string>('MY_BUCKET');
+    throw new HttpException(
+      {
+        status: HttpStatus.MOVED_PERMANENTLY,
+        error: 'This endpoint is deprecated, please use /v2/users instead.',
+        fileName: 'users.service.ts',
+        lineNumber: 70,
+      },
+      HttpStatus.MOVED_PERMANENTLY,
+    );
     console.log(this.ProfileConfiguration);
     console.log(getUsersParamDto, limit, page);
     return [
@@ -50,5 +94,9 @@ export class UsersService {
 
   public async getUserById(id: number) {
     return await this.usersRepository.findOneBy({ id });
+  }
+
+  public async createMany(createManyUsersDto: CreateManyUsersDto) {
+    return await this.usersCreateManyProvider.createMany(createManyUsersDto);
   }
 }
