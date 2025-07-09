@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { SignInDto } from '../dtos/signin.dto';
+import { SignInProvider } from './sign-in.provider';
 
 @Injectable()
 export class AuthService {
-  constructor() {}
+  constructor(private readonly signInProvider: SignInProvider) {}
 
-  public login(): string {
-    // Implement your login logic here
-
-    return `SAMPLLE_TOKEN`;
+  public async signIn(signInDto: SignInDto) {
+    return await this.signInProvider.signIn(signInDto);
   }
 
-  public isAuthenticated(): boolean {
+  public isAuth(): boolean {
     // Implement your authentication logic here
     // For example, check if the token is valid
     return true;

@@ -79,7 +79,7 @@ export class CreatePostDto {
     description: 'Must be a valid timestamp in ISO8601',
     example: '2024-03-16T07:46:32+0000',
   })
-  @IsISO8601()
+  // @IsISO8601()
   @IsOptional()
   publishOn?: Date;
 

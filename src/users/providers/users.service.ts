@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  RequestTimeoutException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { GetUsersParamDto } from '../dtos/get-users-param.dto';
 
 import { Repository } from 'typeorm';
@@ -16,6 +9,8 @@ import { ConfigService, ConfigType } from '@nestjs/config';
 import profileConfig from '../config/profile.config';
 import { UsersCreateManyProvider } from './users-create-many.provider';
 import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
+import { CreateUserProvider } from './create.user.provider';
+import { FindOneUserByEmailProvider } from './find-one-user-by-email.provider';
 
 @Injectable()
 export class UsersService {
@@ -29,40 +24,12 @@ export class UsersService {
     private readonly ProfileConfiguration: ConfigType<typeof profileConfig>,
 
     private readonly usersCreateManyProvider: UsersCreateManyProvider,
+    private readonly createUserProvider: CreateUserProvider,
+    private readonly findOneUserByEmailProvider: FindOneUserByEmailProvider,
   ) {}
 
   public async createUser(createUserDto: CreateUserDto) {
-    let existingUser: User | null;
-    try {
-      existingUser = await this.usersRepository.findOne({
-        where: { email: createUserDto.email },
-      });
-    } catch (error) {
-      console.log(error);
-      throw new RequestTimeoutException(
-        'Unable to connect to database, please try again later.',
-        {
-          description: 'Database connection error',
-        },
-      );
-    }
-    if (existingUser) {
-      throw new BadRequestException('User with this email already exists.');
-    }
-    let newUser = this.usersRepository.create(createUserDto);
-    try {
-      newUser = await this.usersRepository.save(newUser);
-    } catch (error) {
-      console.log(error);
-      throw new RequestTimeoutException(
-        'Unable to connect to database, please try again later.',
-        {
-          description: 'Database connection error',
-        },
-      );
-    }
-
-    return newUser;
+    return this.createUserProvider.createUser(createUserDto);
   }
   public getUsers(
     getUsersParamDto: GetUsersParamDto,
@@ -98,5 +65,9 @@ export class UsersService {
 
   public async createMany(createManyUsersDto: CreateManyUsersDto) {
     return await this.usersCreateManyProvider.createMany(createManyUsersDto);
+  }
+
+  public async findOneByEmail(email: string) {
+    return this.findOneUserByEmailProvider.findOneByEmail(email);
   }
 }

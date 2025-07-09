@@ -16,6 +16,8 @@ import { Tag } from 'src/tags/tag.entity';
 import { GetPostsDto } from '../dtos/get-posts.dto';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { CreatePostProvider } from './create-post.provider';
+import { ActiveUserData } from 'src/auth/interfaces/active-user-data.interfaces';
 
 @Injectable()
 export class PostsService {
@@ -27,6 +29,7 @@ export class PostsService {
     private readonly metaOptionsRepository: Repository<MetaOption>,
     private readonly tagsService: TagsService,
     private readonly paginationProvider: PaginationProvider,
+    private readonly createPostProvider: CreatePostProvider,
   ) {}
 
   public async getAllPosts(
@@ -49,23 +52,8 @@ export class PostsService {
   public getPostById(id: number) {
     return { id };
   }
-
-  public async create(@Body() createpostDto: CreatePostDto) {
-    //find the author from the database
-    const author = await this.usersService.getUserById(createpostDto.authorId);
-    let tags;
-    if (createpostDto.tags) {
-      tags = await this.tagsService.findMultipleTags(createpostDto.tags);
-    }
-    if (author) {
-      const post = this.postRepository.create({
-        ...createpostDto,
-        author: author,
-        //eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        tags: tags,
-      });
-      return await this.postRepository.save(post);
-    }
+  public async create(createPostDto: CreatePostDto, user: ActiveUserData) {
+    return this.createPostProvider.create(createPostDto, user);
   }
 
   public async delete(id: number) {
